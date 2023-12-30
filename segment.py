@@ -108,4 +108,4 @@ class Segment(nn.Module):
         return ypred
             
     def extra_repr(self) -> str:
-        return f'out_features={self.out_features}, segment_features={self.segment_features}'
+        return f'in_features={self.in_features}, out_features={self.out_features}, segment_features={self.segment_features}'
