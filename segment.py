@@ -1,4 +1,4 @@
-# Segment-v3
+# Segment-v4
 import numpy as np
 import torch
 import torch.nn as nn
@@ -90,7 +90,23 @@ class Segment(nn.Module):
         mask_ge = torch.ge(self.x_in_4d,self.x[:, -1:, :]) 
         self.mask[:,:, -1:, :] = self.mask[:, :, -1:, :] | mask_ge
 
+    def _correct_param_order(self):
+        # Cleanup if optimizer assigned overlapping params
+        with torch.no_grad():
+            for i in np.arange(self.x.shape[1] -1):
+                if self.x.data[:,i+1,:] < self.x.data[:,i,:]:
+                    self.x.data[:,i+1,:] = self.x.data[:,i,:]
+            #Mask din't work well.
+            # The following mask is not giving the same results for segment=14
+            # Create a mask for elements where the next column is less than the current column
+        #    mask = model.x.data[:, 1:, :] < model.x.data[:, :-1, :]
+            # Replace values in the next column where the mask is True
+        #    model.x.data[:, 1:, :][mask] = model.x.data[:, :-1, :][mask]
+
     def forward(self, x_in):
+        if self.training:
+            self._correct_param_order()
+
         self._calc_mask(x_in)
 
         divider = (self.x[:,1:,:]-self.x[:,:-1,:])
@@ -106,6 +122,6 @@ class Segment(nn.Module):
         # and sum by segment_features (only one segment should be non zero)
         ypred = torch.sum(ypred, dim=(1,2))
         return ypred
-            
+      
     def extra_repr(self) -> str:
         return f'in_features={self.in_features}, out_features={self.out_features}, segment_features={self.segment_features}'
