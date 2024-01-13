@@ -94,6 +94,8 @@ class Segment(nn.Module):
         # Cleanup if optimizer assigned overlapping params
         with torch.no_grad():
             for i in np.arange(self.x.shape[1] -1):
+                #TODO: This if statement doesnt work where we get multiple values of x.data
+                #RuntimeError: Boolean value of Tensor with more than one value is ambiguous
                 if self.x.data[:,i+1,:] < self.x.data[:,i,:]:
                     self.x.data[:,i+1,:] = self.x.data[:,i,:]
             #Mask din't work well.
@@ -104,8 +106,8 @@ class Segment(nn.Module):
         #    model.x.data[:, 1:, :][mask] = model.x.data[:, :-1, :][mask]
 
     def forward(self, x_in):
-        if self.training:
-            self._correct_param_order()
+        #if self.training:
+        #    self._correct_param_order()
 
         self._calc_mask(x_in)
 
