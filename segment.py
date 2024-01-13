@@ -91,13 +91,27 @@ class Segment(nn.Module):
         self.mask[:,:, -1:, :] = self.mask[:, :, -1:, :] | mask_ge
 
     def _correct_param_order(self):
+        # if the next param value is less than previous then replace with previous.
+        #to work around grad passing restrictions
+        #use Out-of-Place Operation + In-place Copy
+        mask_lt = torch.lt(self.x[:, 1:, :], self.x[:, :-1, :])
+        while(torch.any(mask_lt)):
+            temp_x = self.x.clone()
+            temp_y = self.y.clone()
+            temp_x[:, 1:, :][mask_lt] = self.x[:, :-1, :].clone()[mask_lt]  # Use .clone() here! 
+            temp_y[:, 1:, :][mask_lt] = self.y[:, :-1, :].clone()[mask_lt]  # Use .clone() here! 
+            #self.x[:] = temp 
+            self.x.data = temp_x.data
+            self.y.data = temp_y.data
+            mask_lt = torch.lt(self.x[:, 1:, :], self.x[:, :-1, :])
+    
         # Cleanup if optimizer assigned overlapping params
-        with torch.no_grad():
-            for i in np.arange(self.x.shape[1] -1):
-                #TODO: This if statement doesnt work where we get multiple values of x.data
+        #with torch.no_grad():
+        #    for i in np.arange(self.x.shape[1] -1):
+        #        #TODO: This if statement doesnt work where we get multiple values of x.data
                 #RuntimeError: Boolean value of Tensor with more than one value is ambiguous
-                if self.x.data[:,i+1,:] < self.x.data[:,i,:]:
-                    self.x.data[:,i+1,:] = self.x.data[:,i,:]
+        #        if self.x.data[:,i+1,:] < self.x.data[:,i,:]:
+        #            self.x.data[:,i+1,:] = self.x.data[:,i,:]
             #Mask din't work well.
             # The following mask is not giving the same results for segment=14
             # Create a mask for elements where the next column is less than the current column
@@ -106,8 +120,10 @@ class Segment(nn.Module):
         #    model.x.data[:, 1:, :][mask] = model.x.data[:, :-1, :][mask]
 
     def forward(self, x_in):
-        #if self.training:
-        #    self._correct_param_order()
+        if self.training:
+            # As the gradients are reset per training it should be ok
+            with torch.no_grad():
+                self._correct_param_order()
 
         self._calc_mask(x_in)
 
