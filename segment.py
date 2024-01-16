@@ -56,7 +56,7 @@ class Segment(nn.Module):
 
         self.x = nn.Parameter(torch.Tensor(in_features,
                                             segment_features + 1, out_features))
-        self.y = nn.Parameter(torch.Tensor(in_features,
+        self.y = nn.Parameter(torch.zeros(in_features,
                                             segment_features + 1, out_features))
         self.initialized = False
 
