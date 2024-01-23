@@ -18,6 +18,9 @@ class Segment(nn.Module):
         in_features: size of each input sample
         out_features: size of each output sample
         segment_features: number of segments on x dimensions
+        sum_on_x: boolean indicating whether to sum y values on in_features dimension
+        if True y dimensions are [N, in_features, out_features]
+        if False y dimensions are [N, out_features]
 
     Shape:
         - Input: :math:`(*, H_{in})` where :math:`*` means any number of
@@ -42,17 +45,18 @@ class Segment(nn.Module):
         >>> print(output.size())
         torch.Size([128, 30])
     """
-    __constants__ = ['in_features', 'out_features', 'segment_features']
+    __constants__ = ['in_features', 'out_features', 'segment_features', 'sum_on_x']
     in_features: int
     out_features: int
     segment_features: int
     x: torch.Tensor
     y: torch.Tensor
-    def __init__(self, in_features, out_features, segment_features):
+    def __init__(self, in_features, out_features, segment_features, sum_on_x=True):
         super(Segment, self).__init__()
         self.segment_features = segment_features
         self.out_features = out_features
         self.in_features = in_features
+        self.sum_on_x = sum_on_x
 
         self.x = nn.Parameter(torch.Tensor(in_features,
                                             segment_features + 1, out_features))
@@ -138,7 +142,10 @@ class Segment(nn.Module):
         # ypred.shape = [N, in_features, segment_features, out_features]
         # we can sum up by in_features (as y is cumulative of all f(x))
         # and sum by segment_features (only one segment should be non zero)
-        ypred = torch.sum(ypred, dim=(1,2))
+        if self.sum_on_x:
+            ypred = torch.sum(ypred, dim=(1,2))
+        else:
+            ypred = torch.sum(ypred, dim=(2))
         return ypred
       
     def extra_repr(self) -> str:

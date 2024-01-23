@@ -39,6 +39,7 @@ class Decoder(nn.Module):
         # x_in_nd.shape = [image_size, 1, 1]
         # create mask to find out which one segment each x belongs to.
         # one x value should only fit in one segment
+        self.x_in_nd = self.x_in_nd.to(self.x.device)
         lt = torch.lt(self.x_in_nd, self.x[:, 1:]) 
         ge = torch.ge(self.x_in_nd, self.x[:, :-1]) 
         mask = (lt & ge)
