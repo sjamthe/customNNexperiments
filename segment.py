@@ -75,7 +75,7 @@ class Segment(nn.Module):
     
     def _calc_mask(self, x_in):
         # x_in.shape = [N, in_features]
-        self.x_in_4d =  x_in.unsqueeze(-1).unsqueeze(-1)     
+        self.x_in_4d =  x_in.to(self.x.device).unsqueeze(-1).unsqueeze(-1)     
         # x_in_4d.shape =  [N, in_features, 1, 1] 
         # to find out if x is between segments
         lt = torch.lt(self.x_in_4d, self.x[:, 1:, :]) 
